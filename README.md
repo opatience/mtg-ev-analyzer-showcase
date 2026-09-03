@@ -4,7 +4,7 @@ A full-stack analytics platform for estimating the expected value and risk profi
 
 **Python · Flask · NumPy · SQLite · JavaScript**
 
-**33 years of sets analyzed · 100,000–1,000,000 simulated outcomes per analysis · 5500 lines of source code**
+**All 33 years of MTG sets analyzed · 100,000–1,000,000 simulated outcomes per analysis · 5500 lines of source code**
 
 ---
 
