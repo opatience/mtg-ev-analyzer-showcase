@@ -32,7 +32,7 @@ The main interface provides searchable set selection and routes the selected pro
 
 ### Product Analysis
 
-ADD IMAGE
+<img width="1419" height="793" alt="Screenshot 2026-09-04 at 1 01 58 PM" src="https://github.com/user-attachments/assets/b6583e31-0191-44ee-8e70-e7c3a95f1c58" />
 
 The analysis interface exposes product metrics, booster configuration, representative card hits, and simulation controls.
 
