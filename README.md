@@ -154,15 +154,27 @@ Custom simulations use the selected inputs, while saved metrics and history refl
 
 These screenshots show an earlier interface from September 2026. They document the project's development and do not show the current comparison, watchlist, onboarding, or Terminal workflows.
 
-### Earlier set selection
+### Set Selection
 
-<img width="1365" height="868" alt="Earlier MTG EV Analyzer set-selection interface, September 2026" src="https://github.com/user-attachments/assets/77415a1d-8ae0-4e96-830b-094649a5f013" />
+<img width="1726" height="873" alt="Screenshot 2026-10-29 at 7 39 26 PM" src="https://github.com/user-attachments/assets/7bcd2497-145a-4fa4-96ca-308ef6ab05e7" />
 
-### Earlier product analysis
+### Product Analysis 
 
-<img width="1419" height="793" alt="Earlier MTG EV Analyzer product-analysis interface, September 2026" src="https://github.com/user-attachments/assets/b6583e31-0191-44ee-8e70-e7c3a95f1c58" />
+<img width="1692" height="675" alt="Screenshot 2026-10-29 at 7 40 12 PM" src="https://github.com/user-attachments/assets/26990632-c05e-4b64-a849-ecd2527b2f4f" />
+
+<img width="1677" height="603" alt="Screenshot 2026-10-29 at 7 40 16 PM" src="https://github.com/user-attachments/assets/8589f81b-20e5-4867-aafa-81b5083b0228" />
+
+<img width="1702" height="641" alt="Screenshot 2026-10-29 at 7 40 21 PM" src="https://github.com/user-attachments/assets/dcda13d1-b4e7-4356-b643-512fe4343430" />
+
+<img width="1690" height="602" alt="Screenshot 2026-10-29 at 7 40 33 PM" src="https://github.com/user-attachments/assets/53e3a5e5-d01a-45e0-96e5-c574bfa7705a" />
+
+### Compare Page
+
+<img width="1722" height="870" alt="Screenshot 2026-10-29 at 7 41 56 PM" src="https://github.com/user-attachments/assets/0b22aea8-11ed-4fa6-8b07-820d16570da3" />
 
 ## Why I built it
+
+This project allows me to contribute a real and fun thing to the magic community, as well as posing an interesting technical challenge.
 
 Sealed-product EV combines structured booster collation, unequal card probabilities, different treatments, and heavily skewed prices. A useful analysis needs to explain both the average and what individual openings can look like.
 
