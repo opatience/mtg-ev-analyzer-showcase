@@ -1,191 +1,175 @@
-# MTG EV Analyzer
+# Pack Oracle — MTG EV Analyzer
 
-A full-stack analytics platform for estimating the expected value and risk profile of Magic: The Gathering sealed products.
+A full-stack analytics application for evaluating Magic: The Gathering booster packs and boxes through expected card value, simulated opening outcomes, and historical product trends.
 
-**Python · Flask · NumPy · SQLite · JavaScript**
+**Python · Flask · NumPy · SciPy · SQLite · JavaScript · Auth0 · Docker**
 
-**All 33 years of MTG sets analyzed · 100,000–1,000,000 simulated outcomes per analysis · 5500 lines of source code**
+> This repository is a public showcase of Pack Oracle, originally named MTG EV Analyzer. The application source is maintained privately. This repository contains project documentation and screenshots; it is not a runnable distribution.
 
----
+## What it does
 
-## Overview
+A booster product's average card value can look appealing even when most openings return less than that average. Pack Oracle pairs weighted expected-value calculations with simulated outcome distributions so collectors and sellers can see the typical opening, the spread, and the rare high-value tail.
 
-MTG EV Analyzer models the financial distribution of opening Magic: The Gathering booster packs and boxes.
+The application follows three connected workflows:
 
-Rather than reporting only the average card value of a product, the analyzer models the underlying booster composition and card-price distributions to answer questions such as:
+1. **Browse:** search a catalog of packs and boxes, sort tracked metrics, and save products to a personal watchlist.
+2. **Analyze:** select a booster configuration and market, inspect the biggest card hits, and simulate the tracked card value of one or more products.
+3. **Compare:** examine historical price, opening ROI, and skewness trends for two to five products from a shared starting date.
 
-- What is the expected value of a pack or box?
-- How often does an opening return substantially less than its purchase price?
-- What do typical, high-roll, and low-roll openings look like?
-- How much of a product's expected value is concentrated in rare outcomes?
-- How does the distribution change across different booster types and sets?
+Coverage depends on available booster configurations, prices, and saved metrics. Play, Draft, Set, and Collector boosters are supported where data exists; legacy MTGJSON `default` configurations are resolved as Draft boosters.
 
-The application combines booster configuration and pricing data with exact weighted calculations and Monte Carlo simulation, exposing the results through a Flask API and interactive browser frontend.
+## Product features
 
-## Screenshots
+### Catalog and watchlists
 
-### Set Selection
+The catalog separates packs from boxes and supports searching by set name, set code, or product type. Sorting includes release date, EV, the difference between EV and sealed price, skewness, and recent EV movement.
 
-<img width="1365" height="868" alt="Screenshot 2026-09-03 at 4 17 45 PM" src="https://github.com/user-attachments/assets/77415a1d-8ae0-4e96-830b-094649a5f013" />
+Authenticated users can save products to an account-owned watchlist. Free accounts can save five products, with a replacement flow when full; paid accounts have no application-level watchlist cap.
 
-The main interface provides searchable set selection and routes the selected product into the analysis workflow.
+### Product analysis
 
-### Product Analysis
+The analysis page combines saved product metrics with an optional, on-demand simulation:
 
-<img width="1419" height="793" alt="Screenshot 2026-09-04 at 1 01 58 PM" src="https://github.com/user-attachments/assets/b6583e31-0191-44ee-8e70-e7c3a95f1c58" />
+- **Value and price:** weighted mean EV, tracked sealed-product price, and the dollar difference between them.
+- **Opening outcomes:** median, middle 50% range, a sealed-price comparison when available, and the 99th-percentile value.
+- **Simulation inputs:** market, product count, and a card-value cutoff that excludes lower-value cards from the modeled total.
+- **Distribution and rare outcomes:** a percentile chart ending at p99, with p99.9 and the highest simulated outcome reported separately.
+- **Historical metrics:** EV, sealed price, opening ROI percentage, and skewness for the selected product.
 
-The analysis interface exposes product metrics, booster configuration, representative card hits, and simulation controls.
+Card-value calculations support TCGPlayer retail prices and Card Kingdom buylist prices. These represent different valuation bases. Tracked sealed prices and comparison charts currently use TCGPlayer data.
 
-## Core Features
+The interface also includes representative high-value card imagery and an animated pack-opening reveal. The reveal is a presentation feature; the analytics come from the backend model.
 
-### Expected Value Analysis
+### Historical comparisons
 
-The backend computes weighted expected value from the possible cards and outcomes within each booster slot rather than treating every card as equally likely.
+The paid Compare workspace plots two to five packs or boxes using saved daily observations. Users can search for products, filter to saved products, fill the selection from their watchlist, and inspect recorded dates with a pointer, touch, or keyboard.
 
-This allows the model to account for differences in:
+| Metric | How Compare displays change |
+| --- | --- |
+| Sealed price | Percentage change from the shared starting date |
+| Opening ROI | Percentage-point change in `(card EV − sealed price) / sealed price × 100` |
+| Variability | Percentage change in skewness, using the absolute starting value as the denominator |
 
-- rarity
-- booster slot composition
-- card inclusion probability
-- foil and non-foil treatments
-- alternate product configurations
-- individual card prices
+Comparisons require a shared valid starting date and sufficient recorded observations. Missing prices are not estimated. Lines connect observations across gaps, while date inspection reports recorded values only. Products can have different latest observation dates.
 
-### Monte Carlo Simulation
+The workspace offers 1W, 1M, 3M, and All ranges, preserves its selection in the URL, and supports up to five account-owned comparison presets. Presets store product selections, the metric, the time range, and an optional label; users can update, rename, replace, or delete them.
 
-For metrics that depend on the complete distribution rather than its mean, the application runs configurable **100,000–1,000,000-outcome Monte Carlo simulations** using NumPy.
+### Accounts and interface modes
 
-Simulated pack and box openings are aggregated into value distributions used to estimate:
+Auth0 provides sign-in, with server-side token validation and locally stored account entitlements. Longer history, Compare data access, and comparison presets are protected by backend account checks.
 
-- median outcome
-- value percentiles
-- variability - modeled by calculating the fisher-pearson coefficient on the samples
-- probability of exceeding selected value thresholds
-- upper-tail / jackpot outcomes
-- distribution shape beyond simple expected value
+The free history endpoint returns the latest seven saved snapshots. Paid users can access all saved history, which supports the analysis page's longer-history controls and the Compare workspace. These are implemented access tiers; this showcase does not demonstrate a billing or checkout system.
 
-This distinction is important because two products with similar expected values can have substantially different risk profiles.
+The app includes guided onboarding with account-persisted walkthrough status and two interface modes: the standard visual interface and a Terminal-style interface. Mode preference is retained between visits. Compare is available in the standard interface.
 
-### Set and Booster Coverage
+## How the analytics work
 
-The analyzer supports **150+ Magic: The Gathering sets** and multiple booster configurations.
+### Weighted expected value
 
-Booster and pricing information is sourced from **MTGJSON**, while card imagery is retrieved separately for frontend presentation.
+Each booster configuration specifies weighted variants, slot contents, card pools, and foil treatments. The calculation combines these weights with card prices rather than assuming that every card in a set is equally likely.
 
-### Historical Metrics
+EV is the modeled value of tracked cards under the selected market and cutoff. It is calculated separately from the simulated mean.
 
-Calculated metrics are persisted in **SQLite**, allowing the application to retain both current and historical analytical results instead of recomputing every value from scratch.
+### Monte Carlo outcomes
+
+The simulation samples configured booster variants and their weighted card pools, maps sampled cards to prices, and aggregates them into pack or box opening totals.
+
+Simulation volume depends on the task:
+
+| Task | Simulated outcomes |
+| --- | --- |
+| On-demand distribution chart | 10,000–100,000, scaled by the number of packs being modeled |
+| Scheduled pack metrics | 1,000,000 per product |
+| Scheduled box metrics | 100,000 per product |
+
+NumPy handles sampling and aggregation. On-demand distributions use an input-derived random seed to stabilize results for the same inputs and underlying data.
+
+The application labels its skewness metric **Variability**. It uses the Fisher–Pearson coefficient calculated by SciPy to describe how lopsided the simulated outcomes are. This is not variance or standard deviation, and its rank is not a complete measure of financial risk.
+
+The highest simulated outcome is the largest value observed in that sample, not a theoretical maximum or a guaranteed future result.
+
+### Interpreting ROI
+
+The current interface uses different units in different places:
+
+| Location | Meaning |
+| --- | --- |
+| Catalog and analysis summary | `EV − sealed price`, in dollars |
+| Single-product historical ROI | `(EV − sealed price) / sealed price × 100`, in percent |
+| Compare ROI trend | Change in that historical percentage, in percentage points |
+
+For example, a move from −40% opening ROI to −25% appears as **+15 percentage points** in Compare.
+
+These values describe modeled card value before fees and shipping. They do not represent realized sale proceeds.
 
 ## Architecture
 
 ```text
-                    ┌─────────────────────┐
-                    │    Browser Client   │
-                    │ HTML / CSS / JS UI  │
-                    └──────────┬──────────┘
-                               │
-                          HTTP / JSON
-                               │
-                    ┌──────────▼──────────┐
-                    │      Flask API      │
-                    │ request validation  │
-                    │ + orchestration     │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-              ▼                ▼                ▼
-     ┌────────────────┐ ┌──────────────┐ ┌──────────────┐
-     │ EV Calculation │ │ Monte Carlo  │ │    SQLite    │
-     │     Engine     │ │  Simulation  │ │ Persistence  │
-     └───────┬────────┘ └──────┬───────┘ └──────────────┘
-             │                 │
-             └────────┬────────┘
-                      ▼
-             ┌─────────────────┐
-             │ MTGJSON booster │
-             │ + pricing data  │
-             └─────────────────┘
+MTGJSON booster configurations and card prices
+                  │
+          Scheduled data pipeline
+                  │
+        Local datasets and SQLite
+                  │
+       ┌──────────┴───────────┐
+       │                      │
+Weighted EV engine    Monte Carlo simulation
+       │                      │
+       └──────────┬───────────┘
+                  │
+              Flask API ───── Auth0 validation
+                  │                   │
+                  │          Account-owned SQLite data
+                  │          Watchlists · presets · onboarding
+                  │
+       Browser: HTML / CSS / JavaScript
+       Catalog · analysis · history · Compare
 ```
 
-The frontend is intentionally separated from the analytics layer. The browser requests data through the Flask API, while booster modeling, weighted calculations, simulations, and persistence remain backend responsibilities.
+The browser handles navigation, account state, controls, chart rendering, and historical comparison transformations. Booster modeling, weighted EV, simulation, persistence, and access checks remain backend responsibilities.
 
-## Technology
+| Layer | Technology and responsibility |
+| --- | --- |
+| API | Python, Flask, JSON responses |
+| Analytics | NumPy sampling and aggregation; SciPy skewness |
+| Storage | SQLite for EV tables, current metrics, historical snapshots, and account data |
+| Interface | HTML, CSS, JavaScript, SVG charts, standard and Terminal modes |
+| Identity | Auth0, PyJWT token validation, local account entitlements |
+| Data and imagery | MTGJSON booster/card-price data; Scryfall card imagery |
+| Runtime | Docker Compose, Gunicorn backend, Nginx frontend |
 
-| Layer                   | Technology            |
-| ----------------------- | --------------------- |
-| Backend                 | Python, Flask         |
-| Statistical computation | NumPy                 |
-| Database                | SQLite                |
-| Frontend                | JavaScript, HTML, CSS |
-| Booster / pricing data  | MTGJSON               |
-| Card imagery            | Scryfall              |
-| API format              | REST / JSON           |
+A GitHub Actions workflow is configured to refresh external datasets and regenerate saved metrics daily. This configuration does not guarantee that every product has a fresh observation on every date.
 
-## Implementation
+Analytical databases are mounted read-only into the application container. Account-owned data uses a separate writable persistent volume so watchlists, presets, and onboarding state can survive container replacement.
 
-The complete production source for MTG EV Analyzer is maintained in a **private repository**.
+## Data boundaries
 
-This repository serves as a public technical overview of the project rather than a distributable copy of the application. The full implementation includes the booster-generation logic, probability modeling, simulation engine, API layer, persistence system, data-processing pipeline, and frontend application.
+The interface distinguishes current metrics, historical fallback metrics, and unavailable data. It exposes observation dates instead of treating the presence of a database row as proof of freshness.
 
-Keeping the core implementation private allows me to demonstrate the architecture, engineering decisions, and behavior of the system without publishing the complete application for unrestricted redistribution.
+Sealed prices must be positive to support price-dependent metrics. Missing prices remain unavailable. Card-price lookup can fall back to earlier recorded prices; cards with no usable price contribute zero under the current model.
 
-Representative portions of the implementation may be included here where they help demonstrate specific technical decisions without exposing the full system.
+Custom simulations use the selected inputs, while saved metrics and history reflect the inputs used when those snapshots were generated. Changing a simulation control does not rewrite historical observations.
 
-## Selected Implementation Details
+## Interface screenshots
 
-### Weighted Booster Modeling
+These screenshots show an earlier interface from September 2026. They document the project's development and do not show the current comparison, watchlist, onboarding, or Terminal workflows.
 
-A booster is modeled as a collection of slots, with each slot having its own possible card pools and probability distribution.
+### Earlier set selection
 
-The analytics layer resolves these slot-level probabilities before computing expected value or generating simulated packs. This avoids approximating a booster as a uniform random selection from an entire set.
+<img width="1365" height="868" alt="Earlier MTG EV Analyzer set-selection interface, September 2026" src="https://github.com/user-attachments/assets/77415a1d-8ae0-4e96-830b-094649a5f013" />
 
-### Simulation Pipeline
+### Earlier product analysis
 
-At a high level, a simulation follows this flow:
+<img width="1419" height="793" alt="Earlier MTG EV Analyzer product-analysis interface, September 2026" src="https://github.com/user-attachments/assets/b6583e31-0191-44ee-8e70-e7c3a95f1c58" />
 
-```text
-Select set and booster type
-        ↓
-Load booster configuration
-        ↓
-Resolve card pools and probabilities
-        ↓
-Sample each booster slot
-        ↓
-Map sampled cards to market values
-        ↓
-Aggregate pack / box value
-        ↓
-Repeat 100,000–1,000,000 times
-        ↓
-Calculate distribution statistics
-```
+## Why I built it
 
-NumPy is used for the high-volume numerical work so that hundreds of thousands of simulated openings can be evaluated in 1-10 seconds depending on size.
+Sealed-product EV combines structured booster collation, unequal card probabilities, different treatments, and heavily skewed prices. A useful analysis needs to explain both the average and what individual openings can look like.
 
-### API / Frontend Boundary
+Pack Oracle brings those questions into one application, combining probability modeling, numerical simulation, a data-refresh pipeline, authenticated APIs, persistent account features, and interactive visualizations.
 
-The frontend does not reproduce the analytics logic.
+## Source availability
 
-Instead, it handles set and booster selection, asynchronous requests, loading states, card presentation, and visualization while the Flask backend remains responsible for calculation and data access.
-
-This separation keeps the statistical implementation centralized and allows the analytical layer to evolve independently of the interface.
-
-### Persistence
-
-SQLite stores calculated and historical metrics locally. Separating persisted analytical results from the raw external datasets reduces unnecessary recomputation and provides a foundation for comparing changes in sealed-product value over time.
-
-## Project Motivation
-
-I built MTG EV Analyzer because sealed-product expected value is more complicated than averaging the prices of cards in a set.
-
-Booster products have structured collation, unequal card probabilities, multiple slots, different treatments, and heavily skewed price distributions. A product can have a reasonable average value while most individual openings fall substantially below that average.
-
-The project became an opportunity to combine an area I already understood well, Magic: The Gathering, with probability, simulation, backend development, API design, data persistence, and frontend engineering.
-
-## Source Availability
-
-The full application is not publicly distributed. This repository contains documentation, screenshots, architecture information, and selected implementation examples intended to demonstrate the engineering behind the project.
+The full application is maintained in a private repository. This public showcase explains the implemented product and its engineering; it does not include the application source, installation instructions, or a hosted demo.
 
 Magic: The Gathering and related properties are owned by Wizards of the Coast. This project is unofficial and is not affiliated with or endorsed by Wizards of the Coast, MTGJSON, or Scryfall.
